@@ -1,0 +1,335 @@
+                                    Project 3
+Comparative protein sequence analysis to determine similarities in proteins involved with hereditary hemochromatosis. 
+
+                                  Introduction
+
+***Scientific Question***: In terms of presenting greater face and construct validities to study human hereditary hemochromatosis, do mice (Mus musculus) models have a greater sequence similarity (than rat (Rattus norvegicus) models) with the human (Homo sapiens) variants of the HFE, Tfr1, and Tfr2 proteins?
+
+***Hypothesis***: If the Mus musculus variants of the HFE, Tfr1, and Tfr2 genes share a greater sequence similarity with the human variants, mice models are a better choice (in comparison to Rattus norvegicus models) to study human hereditary hemochromatosis.
+
+***Background***: The HFE, Tfr1, and Tfr2 proteins are some of the most important ones involved in the causation of hereditary hemochromatosis in humans. HFE is a homeostatic iron regulator protein. Tfr1 and Tfr2 are two different variants of transferrin receptor proteins. Mutations in one or more of these proteins are commonly considered to be responsible for the hemochromatosis phenotype. In this context, I aimed to study the similarities of these proteins in their natural forms between human and mice/rats in order to explore if any one of the animal model offers a greater similarity over the other. This is done under the assumption that having a model with protein variants that have greater similarity to the human versions would offer an overall better construct and face validities to the experiment/study. 
+For this analysis, sequences of the HFE, Tfr1, and Tfr2 proteins have been acquired in FASTA format from the UniProt database. I tried routing them through their accession numbers but as that was picking up the wrong sequences despite the usage of the listes accession numbers, I relied on FASTA files and created filepaths to retrieve the sequences onto R-Studio from my desktop. Here are the details of the protein pages on UniProt - 
+HFE Protein: https://www.uniprot.org/taxonomy/9606 (Human)
+             https://www.uniprot.org/taxonomy/10090 (Mouse)
+             https://www.uniprot.org/taxonomy/10116 (Rat)
+Tfr1 Protein: https://www.uniprot.org/taxonomy/9606 (Human)
+              https://www.uniprot.org/taxonomy/10090 (Mouse)
+              https://www.uniprot.org/taxonomy/10116 (Rat)
+Tfr2 Protein: https://www.uniprot.org/taxonomy/9606 (Human)
+              https://www.uniprot.org/taxonomy/10090 (Mouse)
+              https://www.uniprot.org/taxonomy/10116 (Rat)
+              
+***Bioinformatic Analysis***: Pairwise and Multiple Sequence Alignments
+*Pairwise Sequence Alignment* - Performed in order to generate individual scores for similarities between protein sequences between human and rat/mouse variants of the proteins. As the sequences are of the same protien, I used the global alignment approach with the Needleman-Wunsch algorithm and the appropriate BLOSUM matrix (details explained later) to generate the scores for the alignments. For a particular protein, whichever alignment ends up generating a higher score would indicate greater similarity between the associated sequences. Ultimately, I will have a table of 6 values - 2 alignment scores per protein. I’ll end up comparing the associated values in order to determine whether mice or rats have higher overall similarity with the human variants of the proteins involved.
+(seqinr and Biostrings (from Bioconductor) packages are used here).
+*Multiple Sequence Alignment* - Performed to visualize the alignments. The msa package contains certain functions that align different sequences together and symbolize conserved regions based on colors and symbols. It utilizes Clustal parameters to perform the alignments. Here, I ran the associated code on each one of the proteins that I’m considering as criteria for similarity in reference to hereditary hemochromatosis. So there is one plot per each protein being studied (Hfe, Tfr1, and Tfr2). This is more so for the visualization purposes as I thought it would be nice to have a visual depiction along with the scores so as to put them in context. So even though it would be hard to infer any conclusive information directly from the alignment plots, having the pairwise alignment scores will be an advantage to really see and comprehend the sequence similarities.
+(msa package used here). 
+
+---------------------------------------------------------------------------------
+
+                                  HFE Protein
+***Part 1: Pairwise Alignment in Human-Organism fashion***
+
+*Package Details* - 
+1. 'seqinr': This package enables biological sequence retreival and analysis. It is often utilized for exploratory data analysis and data visualization for biological sequence (DNA and protein) data. 
+2. 'Biostrings': This package is used to handle large biological sequences. It offers memory efficient string containers, string matching algorithms, and other utilities, for fast manipulation and analysis. 
+
+Note: This step need not be repeated after the first time if the entire analysis is performed on a continuous session on R-Studio. 
+```{r}
+#To install and load the packages
+
+install.packages("seqinr")
+library(seqinr)
+
+
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("Biostrings")
+library(Biostrings)
+```
+
+```{r}
+#Pulling up the associated FASTA file from my desktop and reading it into R.
+#Format for giving file path! 
+HFE_All <- "/Users/tvisha/Desktop/HFE.fasta"
+HFE_Read <- read.fasta(HFE_All)
+```
+
+```{r}
+#Subsetting the Human variant of HFE (Depends on the seq# in the fasta file)
+Human_HFE <- HFE_Read[[2]]
+Human_HFE
+
+#Subsetting the Rat variant of HFE (Depends on the seq# in the fasta file)
+Rat_HFE <- HFE_Read[[1]]
+Rat_HFE
+```
+
+```{r}
+#Human - Rat 
+#The 'c2s' function (from seqinr) converts characters to strings
+#'toupper' function used as that format is needed for pairwiseAlignment() to work.
+Human_HFE_String <- toupper(c2s(Human_HFE))
+Rat_HFE_String <- toupper(c2s(Rat_HFE))
+```
+
+```{r}
+#The next few steps are for pairwise global alignment of protein sequences using the Needleman-Wunsch algorithm.
+#pairwiseAlignment() is a function from the seqinr package which has already been loaded. In this context, it performs scoring for pairwise matching of two protein sequences against a given scoring matrix (BLOSUM) and with the set scoring parameters. 
+#Here, the scoring parameters are: gapOpening = -2, gapExtension = -8.
+
+#Using the BLOSUM62 scoring matrix for this analysis as the proteins differ only a little. The Biostrings package is required for this scoring matrix to be loaded onto R-Studio. 
+
+data("BLOSUM62")
+
+#Reason for choosing '62': Higher BLOSUM # Matrix = Less difference in the protein sequences being analysed. In this accord, the scoring matrix is stricter with a greater penalty for gap openings and extensions. 
+
+globalAlign_HFE_HR <- pairwiseAlignment(Human_HFE_String, Rat_HFE_String, substitutionMatrix = BLOSUM62, gapOpening = -2, gapExtension = -8, scoreOnly = TRUE)
+
+globalAlign_HFE_HR #To print the alignment score details out.
+#With the given parameters, the score is 1229. 
+```
+
+```{r}
+#Subsetting the Mouse variant of HFE (Depends on the seq# in the fasta file)
+Mouse_HFE <- HFE_Read[[3]]
+Mouse_HFE
+```
+
+```{r}
+data("BLOSUM62") 
+
+#Human - Mouse 
+
+Mouse_HFE_String <- toupper(c2s(Mouse_HFE))
+
+globalAlign_HFE_HM <- pairwiseAlignment(Human_HFE_String, Mouse_HFE_String,
+                                         substitutionMatrix = BLOSUM62, gapOpening = -2, gapExtension = -8, scoreOnly = TRUE)
+globalAlign_HFE_HM #To print details out. 
+#Score here is 1224.
+```
+
+
+***Part 2: Multiple Sequence Alignment for Visualization Purposes*** 
+
+Note: This requires the installation of 'TeXshade' (differs from one OS to another) in order to return the ouptut in PDF format. Need to download from the internet.
+        
+*Package Details* - 
+1. 'msa': This package offers a unified R/Bioconductor interface to the multiple sequence alignment algorithms ClustalW, ClustalOmega, and Muscle. As mentioned above, the multiple sequence alignment algorithms are complemented by a function for pretty-printing multiple sequence alignments using the LaTeX package TeXshade.
+
+Note: Again, this step need not be repeated after the first time if the entire analysis is performed on a continuous session on R-Studio. 
+
+```{r}
+#To install and load the package
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("msa")
+
+library(msa)
+```
+
+```{r}
+#To load the amino acid sequences
+HFE_SequenceFile <- "/Users/tvisha/Desktop/HFE.fasta"
+
+#The readAAStringSet() function belongs to the Biostrings package which has already been loaded individually and also as part of the msa package. It returns the input sequences in amino acid format.
+HFE_Sequences <- readAAStringSet(HFE_SequenceFile)
+HFE_Sequences
+```
+
+```{r}
+#For the msa() function the argument is the protein sequences containing variable. It acts as a unified interface to multiple sequence alignment algorithms and is a wrapper function that provides a unified interface to the three functions msaClustalW(), msaClustalOmega(), and msaMuscle(). The input sequences are passed as argument inputSeqs, and have the following arguments: cluster, gapOpening, gapExtension, maxiters, substitutionMatrix, order, type, and verbose. The parameters defined for these alogorithms allow for the alignment of the protein sequences accordingly. Here, as it is used specifically for visualization purposes, the parameters are defined to builds a multiple sequence alignment from a series of pairwise alignments.
+
+HFE_Alignment <- msa(HFE_Sequences)
+HFE_Alignment
+```
+
+```{r}
+#The print() function provided by the msa package provides some ways for customizing the output, such as, showing the entire alignment split over multiple blocks of sub-sequences:
+
+print(HFE_Alignment, show="complete")
+
+msaPrettyPrint(HFE_Alignment, output="pdf", showNames="none", showLogo="none", askForOverwrite=FALSE, verbose=FALSE)
+```
+
+---------------------------------------------------------------------------------
+
+                                  TFR1 Protein
+                                  
+***Part 1: Pairwise Alignment in Human-Organism fashion***
+
+```{r}
+#Pulling up the associated FASTA file from my desktop and reading it into R.
+Tfr1_All <- "/Users/tvisha/Desktop/Tfr1.fasta"
+Tfr1_Read <- read.fasta(Tfr1_All)
+```
+
+```{r}
+#Subsetting the Human variant of Tfr1 (Depends on the seq# in the fasta file)
+Human_Tfr1 <- Tfr1_Read[[1]]
+Human_Tfr1
+
+#Subsetting the Rat variant of Tfr1 (Depends on the seq# in the fasta file)
+Rat_Tfr1 <- Tfr1_Read[[2]]
+Rat_Tfr1
+```
+
+```{r}
+#Human - Rat
+
+data("BLOSUM62")
+Human_Tfr1_String <- toupper(c2s(Human_Tfr1))
+Rat_Tfr1_String <- toupper(c2s(Rat_Tfr1))
+
+globalAlign_Tfr1_HR <- pairwiseAlignment(Human_Tfr1_String, Rat_Tfr1_String,
+                                        substitutionMatrix = BLOSUM62, gapOpening = -2, gapExtension = -8, scoreOnly = TRUE)
+globalAlign_Tfr1_HR
+#Score here is 3121.
+```
+
+```{r}
+#Subsetting the Mouse variant of Tfr1 (Depends on the seq# in the fasta file)
+Mouse_Tfr1 <- Tfr1_Read[[3]]
+Mouse_Tfr1
+```
+
+```{r}
+#Human - Mouse
+
+Mouse_Tfr1_String <- toupper(c2s(Mouse_Tfr1))
+
+globalAlign_Tfr1_HM <- pairwiseAlignment(Human_Tfr1_String, Mouse_Tfr1_String,
+                                         substitutionMatrix = BLOSUM62, gapOpening = -2, gapExtension = -8, scoreOnly = TRUE)
+globalAlign_Tfr1_HM 
+#Score here is 3093.
+```
+
+***Part 2: Multiple Sequence Alignment for Visualization Purposes***
+
+```{r}
+#To load the amino acid sequences
+Tfr1_SequenceFile <- "/Users/tvisha/Desktop/Tfr1.fasta"
+Tfr1_Sequences <- readAAStringSet(Tfr1_SequenceFile)
+Tfr1_Sequences
+
+#Running the msa() function. 
+Tfr1_Alignment <- msa(Tfr1_Sequences)
+Tfr1_Alignment
+```
+
+```{r}
+print(Tfr1_Alignment, show="complete")
+
+msaPrettyPrint(Tfr1_Alignment, output="pdf", showNames="none", showLogo="none", askForOverwrite=FALSE, verbose=FALSE)
+```
+
+---------------------------------------------------------------------------------
+
+                                  TFR2 Protein
+                                  
+***Part 1: Pairwise Alignment in Human-Organism fashion***
+
+```{r}
+#Pulling up the associated FASTA file from my desktop and reading it into R.
+Tfr2_All <- "/Users/tvisha/Desktop/Tfr2.fasta"
+Tfr2_Read <- read.fasta(Tfr2_All)
+```
+
+```{r}
+#Subsetting the Human variant of Tfr2 (Depends on the seq# in the fasta file)
+Human_Tfr2 <- Tfr2_Read[[1]]
+Human_Tfr2
+
+#Subsetting the Rat variant of Tfr2 (Depends on the seq# in the fasta file)
+Rat_Tfr2 <- Tfr2_Read[[3]]
+Rat_Tfr2
+```
+
+```{r}
+#Human - Rat
+
+data("BLOSUM62") 
+
+Human_Tfr2_String <- toupper(c2s(Human_Tfr2))
+Rat_Tfr2_String <- toupper(c2s(Rat_Tfr2))
+
+globalAlign_Tfr2_HR <- pairwiseAlignment(Human_Tfr2_String, Rat_Tfr2_String,
+                                         substitutionMatrix = BLOSUM62, gapOpening = -2, gapExtension = -8, scoreOnly = TRUE)
+globalAlign_Tfr2_HR 
+#Score here is 3470. 
+```
+
+```{r}
+#Subsetting the Mouse variant of Tfr2 (Depends on the seq# in the fasta file)
+Mouse_Tfr2 <- Tfr2_Read[[2]]
+Mouse_Tfr2
+```
+
+```{r}
+#Human - Mouse
+
+Mouse_Tfr2_String <- toupper(c2s(Mouse_Tfr2))
+
+globalAlign_Tfr2_HM <- pairwiseAlignment(Human_Tfr2_String, Mouse_Tfr2_String,
+                                         substitutionMatrix = BLOSUM62, gapOpening = -2, gapExtension = -8, scoreOnly = TRUE)
+globalAlign_Tfr2_HM 
+#Score here is 3504.
+```
+
+***Part 2: Multiple Sequence Alignment for Visualization Purposes***
+
+```{r}
+#To load the amino acid sequences
+Tfr2_SequenceFile <- "/Users/tvisha/Desktop/Tfr2.fasta"
+Tfr2_Sequences <- readAAStringSet(Tfr2_SequenceFile)
+Tfr2_Sequences
+```
+
+```{r}
+#Running the msa() function. 
+Tfr2_Alignment <- msa(Tfr2_Sequences)
+Tfr2_Alignment
+```
+
+```{r}
+print(Tfr2_Alignment, show="complete")
+
+msaPrettyPrint(Tfr2_Alignment, output="pdf", showNames="none", showLogo="none", askForOverwrite=FALSE, verbose=FALSE)
+```
+
+
+---------------------------------------------------------------------------------
+
+
+                Making a data frame of the resultant scores
+
+```{r}
+HFE_Scores <- c(globalAlign_HFE_HR,globalAlign_HFE_HM)
+Tfr1_Scores <- c(globalAlign_Tfr1_HR,globalAlign_Tfr1_HM)
+Tfr2_Scores <- c(globalAlign_Tfr2_HR,globalAlign_Tfr2_HM)
+```
+
+```{r}
+AlignmentScores_df <- data.frame(HFE_Scores,Tfr1_Scores,Tfr2_Scores)
+row.names(AlignmentScores_df) <- c("Human-Rat","Human-Mouse")
+AlignmentScores_df
+#Pairwise Alignment Scores
+```
+
+---------------------------------------------------------------------------------
+
+                                    Analysis
+                                    
+Based on these results, the HFE proteins are almost similar while human Tfr1 is more similar to rat Tfr1 and human Tfr2 is more similar to mouse Tfr2. Just on this basis, it might be better to chose a model according to they protein intended to being studied. For instance, choose a rat model in case the protein being studied is Tfr1 and choose a mouse model if it is Tfr2 as these end up having more similarities in the respective case. Hence, it is not as direct as assumed in my hypothesis wherein I assumed that one organism (mice) would have an overall greater similarity (across all proteins) with the human variants of the proteins in context. Similarities vary from protein to protein. Here, an argument can also be made that mouse models could generally be a better option as the proteins are almost similar (HFE) and more so (Tfr2). With HFE and Tfr2 being the two most commonly mutated proteins in all types of hemochromatosis (as cited in existing literature), choosing an animal model with these protein variants being as close as possible to the human variants would be a great choice. In this way then, my hypothesis would indeed be correct.  
+In another perspective, from the scores above, it is made evident that there is an issue with determining the significance of the similarities/differences between sequences. How can we know if the difference is significant? In order to curb this issue, more proteins might have to be included in order to generate more scores. This wouldn't only increase the validity if the assessment, but offer more scores on the basis of which statistical testing could be performed to determine the significance of differences in similarities. 
+
+
+
+
+
+
+
